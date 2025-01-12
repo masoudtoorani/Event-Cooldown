@@ -16,34 +16,36 @@ struct EventsView: View {
         NavigationStack {
             eventsList
                 .navigationTitle("Events")
-                .toolbar {
-                    addButton
+                .toolbar { addButton }
+                .navigationDestination(for: Event.self) { event in
+                    if let binding = bindingForEvent(event) {
+                        EventForm(
+                            mode: .edit(event: event),
+                            onSave: { updatedEvent in
+                                binding.wrappedValue = updatedEvent
+                                events.sort()
+                            }
+                    )}
                 }
         }
     }
     
     private var eventsList: some View {
-            List {
-                ForEach(events.sorted()) { event in
-                    NavigationLink(
-                        destination: EventForm(
-                            event: Binding(
-                                get: { event },
-                                set: { updatedEvent in
-                                    if let index = events.firstIndex(where: { $0.id == updatedEvent.id }) {
-                                        events[index] = updatedEvent
-                                    }
-                                }
-                            ),
-                            isNewEvent: false,
-                            onSave: { _ in }
-                        )
-                    ) {
-                        EventRow(event: event, currentDate: Date())  // Fixed binding issue here
-                    }
+        List {
+            ForEach(events.sorted()) { event in
+                NavigationLink(value: event) {
+                    EventRow(event: event, currentDate: Date())
+                        .contentShape(Rectangle())
                 }
-                .onDelete(perform: deleteEvent)
-            }
+                .buttonStyle(PlainButtonStyle())
+                }
+            .onDelete(perform: deleteEvent)
+        }
+    }
+    
+    private func bindingForEvent(_ event: Event) -> Binding<Event>? {
+        guard let index = events.firstIndex(where: { $0.id == event.id }) else { return nil }
+        return $events[index]
     }
     
     private func deleteEvent(at offsets: IndexSet) {
@@ -53,11 +55,9 @@ struct EventsView: View {
     
     private var addButton: some View {
         NavigationLink(destination: EventForm(
-            event: $newEvent,
-            isNewEvent: true,
+            mode: .add,
             onSave: { event in
                 events.append(event)
-                newEvent = Event(title: "", date: Date(), textColor: .green)
                 events.sort()
             }
         )) {

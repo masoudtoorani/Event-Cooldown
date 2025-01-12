@@ -9,7 +9,7 @@ import Foundation
 import SwiftUI
 
 struct Event: Comparable, Identifiable, Hashable {
-    var id = UUID()
+    let id: UUID = UUID()
     var title: String
     var date: Date
     var textColor: Color
@@ -20,7 +20,11 @@ struct Event: Comparable, Identifiable, Hashable {
 }
 
 class EventList: ObservableObject {
-    @Published var events: [Event] = Event.all
+    @Published var events: [Event] = []
+    
+    init() {
+        events = Event.all
+    }
 }
 
 extension Event {

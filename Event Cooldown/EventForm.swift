@@ -8,16 +8,25 @@
 import SwiftUI
 
 struct EventForm: View {
+    
+    enum FormMode {
+        case add
+        case edit(event: Event)
+    }
+    
     @Environment(\.dismiss) var dismiss
-    @Binding var event: Event
     @State private var draftEvent: Event
-    var isNewEvent: Bool
+    var mode: FormMode
     var onSave: (Event) -> Void
     
-    init(event: Binding<Event>, isNewEvent: Bool, onSave: @escaping (Event) -> Void) {
-        self._event = event
-        self._draftEvent = State(initialValue: event.wrappedValue)  // Temporary copy for edits
-        self.isNewEvent = isNewEvent
+    init(mode: FormMode, onSave: @escaping (Event) -> Void) {
+        self.mode = mode
+        switch mode {
+        case .add:
+            _draftEvent = State(initialValue: Event(title: "", date: Date(), textColor: .red))
+        case .edit(let event):
+            _draftEvent = State(initialValue: event)
+        }
         self.onSave = onSave
     }
     
@@ -36,14 +45,13 @@ struct EventForm: View {
         }
         .toolbar {
             ToolbarItem(placement: .principal) {
-                Text(isNewEvent ? "Add Event" : "Edit \(event.title)")
+                Text(modeTitle)
                     .font(.headline)
                     .foregroundColor(.primary)
                     .bold()
             }
             ToolbarItem(placement: .confirmationAction) {
                 Button("Save", systemImage: "checkmark") {
-                    event = draftEvent
                     onSave(draftEvent)
                     dismiss()
                 }
@@ -51,10 +59,17 @@ struct EventForm: View {
             }
         }
     }
+    
+    private var modeTitle: String {
+        switch mode {
+        case .add:
+            return "Add Event"
+        case .edit(let event):
+            return "Edit \(event.title)"
+        }
+    }
 }
 
 #Preview {
-    EventForm(event: .constant(Event(title: "", date: Date(), textColor: .green)),
-              isNewEvent: true,
-              onSave: { _ in })
+    EventForm(mode: .add) { _ in }
 }
